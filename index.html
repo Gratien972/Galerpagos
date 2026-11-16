@@ -9,7 +9,7 @@
 :root{--card:#15383e;--tx:#f6efd8;--ac:#f2b134;--bd:#33706f;--sand:#ecd9a0;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;min-height:100vh;color:var(--tx);font:16px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;background:var(--g,linear-gradient(100deg,#b9a678,#79c3cc 32%,#1c8fae 68%,#0d4f63)) fixed;transition:background 1s;touch-action:manipulation;overscroll-behavior:none}
-body[data-w=e0]{--g:linear-gradient(100deg,#d2bf86,#8fd3da 32%,#25a0c0 68%,#0f6a82)}body[data-w=e1]{--g:linear-gradient(#3a4f58,#13242a)}body[data-w=e2]{--g:linear-gradient(#2a2f45,#0e1220)}body[data-w=st]{--g:linear-gradient(#222a33,#07090c)}
+body[data-w=e0]{--g:linear-gradient(100deg,#d2bf86,#8fd3da 32%,#25a0c0 68%,#0f6a82)}body[data-w=ec]{--g:linear-gradient(100deg,#c9c3a0,#a9d4d6 32%,#4aa7c0 68%,#1b7c94)}body[data-w=e1]{--g:linear-gradient(#3a4f58,#13242a)}body[data-w=e2]{--g:linear-gradient(#2a2f45,#0e1220)}body[data-w=st]{--g:linear-gradient(#222a33,#07090c)}
 #app{max-width:520px;margin:0 auto;padding:46px 14px 30px;position:relative;z-index:1}
 .in{animation:in .55s ease}@keyframes in{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
 h1{font:700 2.1rem Georgia,serif;text-align:center;margin:.3em 0;text-shadow:0 2px 8px #000a}h2{font-family:Georgia,serif;margin:.4em 0;text-shadow:0 2px 6px #000a}h3{margin:1em 0 .4em;color:#ffd878;font-family:Georgia,serif;text-shadow:0 2px 6px #000c}
@@ -57,8 +57,10 @@ input[type=text]{width:100%}
 .cvi{margin-top:16vh;text-align:center;padding:0 16px}.cvi h2{font-size:1.9rem;color:#ff8d7a}.cvi p{font-size:1.1rem}
 .big-e{font-size:8rem;line-height:1;filter:drop-shadow(0 0 18px #000)}.big-e.sn{animation:sn 2.2s ease-in-out infinite}.big-e.sk{animation:sk 3s ease-in-out infinite}
 @keyframes sn{0%,100%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(8deg) scale(1.08)}}@keyframes sk{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.07);opacity:1}}
+#rl{position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:10px;z-index:20;padding:4px 10px;min-height:38px}
+#rules{display:none;position:fixed;inset:0;z-index:40;background:rgba(6,18,22,.96);overflow:auto;padding:calc(env(safe-area-inset-top,0px) + 14px) 14px 30px}#rules.open{display:block}#rules .ri{max-width:520px;margin:0 auto}#rules li{margin:.4em 0}#rules ul{padding-left:1.2em}
 </style></head><body>
-<div id="fl"></div><button id="gear" onclick="$('set').classList.toggle('open')">🔊</button><div id="set"></div>
+<div id="fl"></div><button id="gear" onclick="$('set').classList.toggle('open')">🔊</button><div id="set"></div><button id="rl" onclick="rules(true)" aria-label="Règles de l’extension">📖</button><div id="rules"></div>
 <canvas id="rn"></canvas><div id="rk"><i></i><i></i></div><div id="app"></div>
 <script>
 const $=s=>document.getElementById(s),A=$('app');
@@ -82,16 +84,16 @@ const R=[
 {n:'Costaud',i:'costaud',e:'💪',c:'Débute la partie avec une tôle.',m:'Ne peut partir que si quelqu’un lui tire dessus.'},
 {n:'Naturiste',i:'naturiste',e:'🩲',c:'Peut regarder l’inventaire d’un joueur, une fois dans la partie.',m:'Doit finir la partie sans aucun objet dans son inventaire.'},
 {n:'Capitaine',i:'capitaine',e:'⚓',c:'À chaque case de l’île découverte, il tire une roue : 1/8 de chance d’obtenir la clé de communication, 7/8 de tomber sur des feuilles inutiles.',m:'Ne peut partir qu’en activant la communication avec la clé de la Ferrari dans le centre de communication, ou en ayant la clé du centre de communication.'},
-{n:'Commercial',i:'commercial',e:'🤝',c:'Une fois dans la partie, échange un objet de son inventaire contre un objet pris au hasard dans l’inventaire d’un joueur (bouton « Voler / échanger »).',m:'Ne peut partir qu’après avoir effectué au moins un échange.'},
+{n:'Commercial',i:'commercial',e:'🤝',c:'Une fois dans la partie, peut voler un objet pris au hasard dans l’inventaire d’un joueur (bouton « Voler »). Comme tout le monde, il peut aussi échanger des objets (bouton « Échanger »).',m:'Ne peut partir qu’après avoir effectué au moins un échange (ou un vol).'},
 {n:'Magicienne',i:'magicienne',e:'🎩',c:'Peut utiliser une fois une potion de résurrection sur un joueur mort.',m:'Ne peut quitter l’île qu’après avoir ressuscité un mort.'},
-{n:'Hypnotiseur',i:'hypno',e:'🌀',c:'Une fois dans la partie, échange deux personnages en secret. Une annonce dit seulement que 2 joueurs ont été échangés.',m:'Ne peut partir que si personne ne lui a tiré dessus.'}];
+{n:'Hypnotiseur',i:'hypno',e:'🌀',c:'Une fois dans la partie, échange en secret les personnages de deux autres joueurs (jamais le sien). Une annonce dit seulement que 2 joueurs ont été échangés.',m:'Ne peut partir que si personne ne lui a tiré dessus.'}];
 const T={ser:['🐍','Serpent : tu es empoisonné !'],com:['📡','Centre de communication : le capitaine peut appeler l’hélico pour quitter l’île.'],vil:['🛖','Village d’indigènes : tu perds une carte au hasard.'],arm:['🔫','Caisse d’armement : tu obtiens un fusil.'],mun:['🎯','Caisse de munitions : tu obtiens une balle.'],deb:['🔩','Débris : tu obtiens une tôle.'],jun:['🌿','Jungle : rien ici.']};
 const CNT={ser:5,com:2,vil:4,arm:4,mun:5,deb:6,jun:10};
-const W={e2:['⚡','Éclairs'],e1:['🌧️','Pluie'],e0:['☀️','Sécheresse'],st:['🌪️','Tempête']};
+const W={ec:['🌤️','Éclaircie'],e2:['⚡','Éclairs'],e1:['🌧️','Pluie'],e0:['☀️','Sécheresse'],st:['🌪️','Tempête']};
 let S;
 function init(){S={p:[],tour:1,i:0,w:null,storm:false,st:{fish:0,eau:0,bois:0,kills:0},cur:null,mode:null,msg:'',pool:[],fresh:null,shot:null,news:'',fish:0,eau:0,an:[],inh:null,pz:false,starved:0,force:false,
 map:sh(Object.entries(CNT).flatMap(([k,n])=>Array(n).fill(k))),seen:Array(36).fill(false)};
-const d=sh(['e0','e0','e0','e0','e1','e1','e1','e1','e2','e2','e2','e2']);d.splice(d.length-(Math.random()*3|0),0,'st');S.deck=d}
+const d=sh(['e0','e0','e0','ec','ec','ec','e1','e1','e1','e2','e2']);S.deck=d.slice(0,9).concat(sh(d.slice(9).concat('st')))}
 /* ================= AUDIO ================= */
 let AC,B={},nb,cur=[],tm,mu,bt,bird=0,V={m:1,w:.8,j:.5,s:.8,u:.6};
 try{Object.assign(V,JSON.parse(localStorage.getItem('gv')||'{}'))}catch(e){}
@@ -113,6 +115,7 @@ function birds(){clearTimeout(bt);bt=setTimeout(()=>{if(AC&&bird>Math.random())c
 let SW;
 function sound(w){SW=w;ctx();stopW();stopMu();
 if(w=='e0'){L('w','lowpass',420,.7,.22,{g:[.11,.18],f:[.07,150]});L('w','bandpass',1800,.5,.05,{g:[.11,.04]});L('w','bandpass',500,.4,.04,{f:[.05,200]});L('j','bandpass',4800,12,.04,{g:[9,.03]});bird=.9}
+if(w=='ec'){L('w','lowpass',380,.7,.12,{g:[.09,.1],f:[.06,100]});L('j','bandpass',4800,12,.03,{g:[9,.03]});bird=.7}
 if(w=='e1'){L('w','highpass',1400,.6,.16);L('w','bandpass',4000,.8,.08);L('w','lowpass',300,.7,.1,{g:[.1,.05]});bird=.2}
 if(w=='e2'){L('w','highpass',1400,.6,.2);L('w','bandpass',3500,.8,.08);L('w','bandpass',450,.5,.1,{f:[.1,150]});tl(3500,8000)}
 if(w=='st'){L('w','bandpass',600,.6,.3,{g:[.25,.18],f:[.15,300]});L('w','highpass',1800,.6,.24);L('w','lowpass',350,.7,.3,{g:[.13,.2]});tl(1800,4500)}}
@@ -136,6 +139,7 @@ fish:()=>{N('s','bandpass',800,1,.5,.6,0,2500);N('s','bandpass',2500,2,.3,.3,.15
 eau:()=>{const w=S.w,r=()=>Math.random();
 if(w=='e0'){N('s','bandpass',700,.6,.9,.15,0,300)}
 else if(w=='e2'){for(let i=0;i<4;i++)P('s',900+r()*500,.1,.35,'sine',i*.11,350);N('s','lowpass',200,.7,1.2,.5,.2,70)}
+else if(w=='ec'){N('s','bandpass',900,.6,.6,.2,0,500);P('s',1100,.1,.3,'sine',0,400)}
 else if(w=='e1'){for(let i=0;i<8;i++)P('s',1000+r()*700,.09,.3,'sine',i*.07,400);N('s','highpass',3000,.5,.6,.12)}
 else{N('s','highpass',1500,.5,1,.4);N('s','lowpass',180,.7,2,.9,0,60);for(let i=0;i<5;i++)P('s',800+r()*500,.1,.3,'sine',.2+i*.07,350)}},
 bois:()=>[0,.16,.3].forEach((t,i)=>P('s',180-i*20,.12,.6,'triangle',t,80)),
@@ -182,15 +186,26 @@ function ok(i){return (i/6|0)==5||hexN(i).some(([a,b])=>S.seen[a*6+b])}
 const HW=42,HH=36,DX=84,DY=54,GX=24,GY=12;
 const hexC=i=>{const r=i/6|0,q=i%6;return[GX+HW+q*DX+(r%2?HW:0),GY+HH+r*DY]};
 const hexP=(x,y)=>[[0,-HH],[HW,-HH/2],[HW,HH/2],[0,HH],[-HW,HH/2],[-HW,-HH/2]].map(([a,b])=>(x+a).toFixed(1)+','+(y+b).toFixed(1)).join(' ');
-function mapSVG(c,fr){let f='',h='';
+const ANT=(x,y)=>`<g transform="translate(${x},${y})"><ellipse cx="0" cy="22" rx="20" ry="6" fill="#000" opacity=".25"/><path d="M-10 20L0 -14L10 20M-6 6H6M-3 -4H3" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M-10 20L0 -14L10 20M-6 6H6M-3 -4H3" stroke="#1d2a2f" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="0" cy="-18" r="4.5" fill="#e53935" stroke="#fff" stroke-width="2"/><path d="M-9 -26Q0 -33 9 -26M-15 -30Q0 -41 15 -30" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/></g>`;
+function mapSVG(c,fr){let f='',h='',a='';
 S.map.forEach((k,i)=>{const [cx,cy]=hexC(i),s=S.seen[i],can=(S.mode=='ser'&&!s&&ok(i))||(S.mode=='insp'&&!s)||(S.mode=='exp'&&!c.ex&&!s&&ok(i));
-if(!s||i===fr)f+=`<g id="f${i}" class="fg"><ellipse cx="${cx}" cy="${cy}" rx="52" ry="44" fill="#eef3f5"/><ellipse cx="${cx-18}" cy="${cy-10}" rx="38" ry="28" fill="#d6e0e4"/><ellipse cx="${cx+20}" cy="${cy+12}" rx="40" ry="28" fill="#fafcfd"/><ellipse cx="${cx-22}" cy="${cy+16}" rx="32" ry="24" fill="#e2eaed"/><ellipse cx="${cx+24}" cy="${cy-14}" rx="32" ry="24" fill="#f4f8f9"/></g>`;
+if(s&&k=='com')a+=ANT(cx,cy);if(!s||i===fr)f+=`<g id="f${i}" class="fg"><ellipse cx="${cx}" cy="${cy}" rx="52" ry="44" fill="#eef3f5"/><ellipse cx="${cx-18}" cy="${cy-10}" rx="38" ry="28" fill="#d6e0e4"/><ellipse cx="${cx+20}" cy="${cy+12}" rx="40" ry="28" fill="#fafcfd"/><ellipse cx="${cx-22}" cy="${cy+16}" rx="32" ry="24" fill="#e2eaed"/><ellipse cx="${cx+24}" cy="${cy-14}" rx="32" ry="24" fill="#f4f8f9"/></g>`;
 h+=`<polygon points="${hexP(cx,cy)}" fill="${can?'rgba(242,177,52,.25)':'transparent'}" stroke="${can?'#f2b134':'rgba(255,255,255,.4)'}" stroke-width="${can?3:1.5}" ${can?'stroke-dasharray="6 4" class="pu"':''} onclick="cell(${i})"/>`});
-return `<div class=mapw><svg viewBox="0 0 600 400"><defs><filter id="fgb" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter></defs><g class="dr"><g filter="url(#fgb)" style="pointer-events:none">${f}</g></g><g>${h}</g></svg></div>`}
+return `<div class=mapw><svg viewBox="0 0 600 400"><defs><filter id="fgb" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter></defs><g class="dr"><g filter="url(#fgb)" style="pointer-events:none">${f}</g></g><g style="pointer-events:none">${a}</g><g>${h}</g></svg></div>`}
 /* ================= ÉCRANS ================= */
+function rules(o){const R2=$('rules');if(!o){R2.classList.remove('open');return}R2.innerHTML=`<div class=ri><h2>📖 Règles de l’extension Jungle</h2>
+<div class=msg><b>⚠️ À lire avant de jouer</b><ul><li>🌦️ <b>Ne plus utiliser la météo du jeu réel</b> (cartes météo) : elle est gérée automatiquement par l’application et affichée à chaque tour.</li><li>🎭 <b>Ignorer les règles de base des personnages</b> du jeu d’origine : seuls les personnages, capacités et missions de l’application sont valables.</li></ul></div>
+<h3>Principe</h3><p>3 à 12 joueurs se passent le téléphone. Chacun découvre son personnage en secret à l’inscription : il a une <b>capacité</b> et une <b>mission</b> à remplir pour pouvoir quitter l’île. L’application suit l’état de chaque mission (📌).</p>
+<h3>Le tour d’un joueur</h3><ul><li><b>Explorer</b> (facultatif, 1 case) : on part de la plage (bord bas de la carte), puis de case voisine en case voisine. Ce qu’on découvre n’est vu que par soi… sauf l’<b>antenne 📡 du centre de communication</b>, qui reste visible de tous.</li><li><b>Action de base</b> : pêcher, collecter du bois, fouiller l’épave ou collecter de l’eau.</li><li><b>Inventaire</b> : tôles, fusil, balles… à ajuster avec + / −.</li><li><b>Capacité</b> du personnage (boutons dédiés, souvent 1 seule fois par partie).</li><li><b>Échanger</b> : 1 échange par tour avec un autre joueur (objet contre objet, avec son accord).</li></ul>
+<h3>Les cases de l’île</h3><ul><li>🐍 Serpent : tu es empoisonné</li><li>📡 Centre de communication</li><li>🛖 Village d’indigènes : tu perds une carte</li><li>🔫 Caisse d’armement : un fusil · 🎯 Caisse de munitions : une balle</li><li>🔩 Débris : une tôle · 🌿 Jungle : rien</li></ul>
+<h3>Météo</h3><ul><li>Paquet de 12 cartes, une par tour de table, comme dans le vrai Galérapagos :</li><li>☀️ Sécheresse ×3 : 0 eau (récolte impossible)</li><li>🌤️ Éclaircie ×3 : 1 eau par récolte</li><li>🌧️ Pluie ×3 : 2 eau</li><li>⚡ Éclairs ×2 : 3 eau</li><li>🌪️ Tempête ×1 : 2 eau, cachée parmi les 3 dernières cartes. La partie s’arrête à la fin de ce tour de table.</li></ul>
+<h3>Vivres</h3><p>À la fin de chaque tour de table, chaque joueur en vie consomme 1 🐟 et 1 💧. En cas de pénurie, les joueurs votent en secret pour éliminer quelqu’un. Le Survivaliste peut forcer un vote.</p>
+<h3>Tuer</h3><p>Il faut 1 fusil + 1 balle (la balle est consommée). Un autre joueur peut défendre la victime en perdant 1 tôle. Le tueur peut récupérer la mission de sa victime (sauf le Survivaliste).</p>
+<h3>Poison</h3><p>Un joueur empoisonné est paralysé pendant <b>un seul tour</b> : il ne peut rien faire, sauf utiliser l’antidote. Le poison se dissipe ensuite.</p>
+<button class=big onclick="rules(false)">Fermer</button></div>`;R2.classList.add('open');R2.scrollTop=0}
 function anim(){A.classList.remove('in');void A.offsetWidth;A.classList.add('in');scrollTo(0,0)}
 function scr(h){A.innerHTML=h;anim()}
-function welcome(){document.body.classList.remove('sel');init();stopW();document.body.dataset.w='';scr(`<div class=c><div style="font-size:5rem">🌴</div><h1>Galérapagos</h1><h3>Extension Jungle</h3><p>Brouillard, tempêtes et secrets sur l’île.</p><p style="opacity:.7;font-size:.9rem">🔊 Active le son de ton téléphone (mode silencieux désactivé).</p></div><button class=big onclick="music();reg()">Nouvelle partie</button>`)}
+function welcome(){document.body.classList.remove('sel');init();stopW();document.body.dataset.w='';scr(`<div class=c><div style="font-size:5rem">🌴</div><h1>Galérapagos</h1><h3>Extension Jungle</h3><p>Brouillard, tempêtes et secrets sur l’île.</p><p style="opacity:.7;font-size:.9rem">🔊 Active le son de ton téléphone (mode silencieux désactivé).</p></div><button class=alt onclick="rules(true)">📖 Règles de l’extension</button><button class=big onclick="music();reg()">Nouvelle partie</button>`)}
 function reg(){document.body.classList.add('sel');scr(`<h2>Inscription des joueurs</h2><p>${S.p.length} joueur(s) inscrit(s) (3 à 12 joueurs). Au suivant de saisir son nom :</p><input type=text id=nm placeholder="Ton nom" autocomplete=off><button class=big onclick="add()">Voir mon personnage</button>`)}
 function add(){const n=$('nm').value.trim();if(!n)return;if(!S.pool.length)S.pool=sh(R.map((_,i)=>i));S.p.push({n,r:S.pool.pop(),a:true,ex:[],prez:null,poison:false,st:{fish:0,eau:0,bois:0,epa:0,expl:0,kills:0,turns:0},dt:0,inv:{fish:0,eau:0,bois:0,tole:0,fusil:0,balle:0},u:{},f:{},hand:0,need:7,key:false,sh:false,ep:false,pn:false});give(S.p[S.p.length-1]);
 scr(`<h2>${n}</h2><div class="card c" id=rv><button class=big onclick="rev()">👁️ Révéler mon personnage</button><p>Ne le montre à personne !</p></div><button class=big onclick="reg()" ${S.p.length>=12?'disabled':''}>Joueur suivant</button><button class=alt onclick="start()" ${S.p.length<3?'disabled':''}>Terminer l’inscription</button>`)}
@@ -202,10 +217,10 @@ function start(){document.body.classList.remove('sel');S.i=0;try{navigator.wakeL
 function trans(){const p=S.p[S.i],an=S.an.join('<br>');S.an=[];try{if(SW!==S.w||!AC||AC.state!='running')sound(S.w)}catch(e){}sfx('turn');scr(wbar()+`<div class=stk><div class=w>🐟 <b>${S.fish}</b> poisson${S.fish>1?'s':''} restant${S.fish>1?'s':''}</div><div class=w>💧 <b>${S.eau}</b> eau${S.eau>1?'x':''} restante${S.eau>1?'s':''}</div></div>${S.news?`<div class=msg>${S.news}</div>`:''}${an?`<div class=msg>${an}</div>`:''}<div class=c style="padding:20px 0"><h1>Tour ${S.tour}</h1><div style="font-size:4.5rem">${W[S.w][0]}</div><p>Passe le téléphone à</p><h2 style="font-size:2rem">${p.n}</h2></div><button class=big onclick="turn()">Je suis ${p.n}</button><button class=alt onclick="fin()">Terminer la partie</button>`)}
 const IT=[['tole','🔩','Tôles'],['fusil','🔫','Fusil'],['balle','🎯','Balles']];
 const locked=p=>!p.a||(p.poison&&!p.pn);const lk=()=>locked(S.p[S.i]);
-const WQ={e0:0,e2:3,e1:2,st:3};
+const WQ={e0:0,ec:1,e1:2,e2:3,st:2};
 const wq=()=>WQ[S.w];
 const SV={3:0,4:1,5:1,6:2,7:2,8:3,9:3,10:4,11:5,12:5,13:6};
-const NM={tole:'🔩 une tôle',fusil:'🔫 un fusil',balle:'🎯 une balle'};
+const NM={tole:'🔩 une tôle',fusil:'🔫 un fusil',balle:'🎯 une balle',fish:'🐟 un poisson',eau:'💧 une eau'},INVK=['tole','fusil','balle','fish','eau'];
 const rn=p=>R[p.r].n,rM=n=>R.find(r=>r.n==n).m,me=()=>S.p[S.i],eq=c=>c.q*(c.dbl?2:1);
 const shore=i=>{const r=i/6|0,c=i%6;return r==0||r==5||c==0||c==5};
 const ninv=p=>p.inv.tole+p.inv.fusil+p.inv.balle+p.inv.fish+p.inv.eau;
@@ -240,14 +255,14 @@ case 'Garde du corps':return p.prez?ps(`🛡️ Ton président : <b>${p.prez}</b
 case 'Mannequin':return ps('Capacité passive : tu peux partir de l’île sans ration de provisions.');
 case 'Enfant':case 'Naturiste':return `<div class="row h">${SL('vw',oth)}${BT('view()','👁️ Voir inventaire',u.view||!oth.length)}</div>`+ps(u.view?'Capacité déjà utilisée.':'Une seule fois dans la partie.');
 case 'Capitaine':return ps(`⚓ Chaque case que tu découvres fait tourner la roue 🎡 (1/8 : clé de communication). Clé : <b>${p.key?'🔑 obtenue':'pas encore'}</b>`);
-case 'Commercial':{const mine=['tole','fusil','balle'].filter(k=>p.inv[k]>0);return u.com?ps('Échange déjà effectué.'):(oth.length&&mine.length?`<div class="row h">${SL('tg',oth)}<select id=gv style="flex:2">${mine.map(k=>`<option value=${k}>${NM[k]}</option>`).join('')}</select></div>`+BT('trade()','🤝 Voler / échanger (1 fois)')+ps('Tu donnes l’objet choisi et tu reçois un objet pris au hasard chez l’autre joueur.'):ps('Il te faut au moins un objet et un autre joueur en vie pour échanger.'))}
+case 'Commercial':return u.com2?ps('Vol déjà effectué.'):(oth.length?`<div class="row h">${SL('tg',oth)}${BT('trade()','🕵️ Voler (1 fois)')}</div>`+ps('Tu prends un objet au hasard dans l’inventaire du joueur choisi. L’échange classique reste disponible plus bas.'):ps('Il faut un autre joueur en vie pour voler.'));
 case 'Œil de lynx':{const t=f.tries||0;return (u.insp?ps('🔍 Inspection déjà utilisée.'):BT("mode('insp')",S.mode=='insp'?'Touche la case à inspecter':'🔍 Inspecter une case (1 fois)',0,S.mode=='insp'?'on':''))+`<p style="margin:.6em 0 .2em"><b>🎯 Deviner un rôle</b> (${3-t} essai${3-t>1?'s':''})</p><div class="row h">${SL('gt',oth)}<select id=gr style="flex:2">${R.map((x,i)=>`<option value=${i}>${x.n}</option>`).join('')}</select></div>`+BT('guess()','🎯 Deviner',t>=3||!oth.length)}
 case 'Psychorigide':return `<div class=stk><div class=w>💧 ${p.st.eau} eau</div><div class=w>🐟 ${p.st.fish} poisson${p.st.fish>1?'s':''}</div></div>`+(u.psy?ps('Doublage déjà utilisé.'):(c.b&&c.b!='epa'?BT('dbl()',c.dbl?'✖️2 Récolte doublée (annuler)':'✖️2 Doubler ma récolte (1 fois)',0,c.dbl?'on':''):ps('Choisis d’abord une action de base de récolte pour pouvoir la doubler.')));
 case 'Magicienne':return u.res?ps('Potion déjà utilisée.'):dead.length?`<div class="row h">${SL('rz',dead)}${BT('resurrect()','✨ Ressusciter')}</div>`+ps('1 fois dans la partie.'):ps('Aucun joueur mort à ressusciter pour l’instant.');
 case 'Sumo':return u.sum?ps('Capacité déjà utilisée.'):`<div class="row h">${SL('su',oth)}${BT('sumo()','🥋 Prendre sa place au radeau',!oth.length)}</div>`+ps('À utiliser lors du départ du radeau (1 fois).');
 case 'Bouffe-tout':return BT('eatx()',`🍖 Manger une ration en plus (−1 🐟 −1 💧) · prises : ${f.extra||0}/4`,c.eatx||S.fish<1||S.eau<1);
 case 'Charognard':return ps('Capacité passive : tu as commencé la partie avec un fusil.');
-case 'Hypnotiseur':return u.hyp?ps('Capacité déjà utilisée.'):`<div class="row h">${SL('hx1',all)}${SL('hx2',all)}</div>`+BT('hypno()','🌀 Échanger ces 2 personnages (1 fois)',all.length<2);
+case 'Hypnotiseur':return u.hyp?ps('Capacité déjà utilisée.'):`<div class="row h">${SL('hx1',oth)}${SL('hx2',oth)}</div>`+BT('hypno()','🌀 Échanger ces 2 personnages (1 fois)',oth.length<2);
 case 'Voyageur temporel':return `<div class=w>🃏 Cartes en main : ${p.hand} / ${p.need}</div>`+ps('Quand tu fouilles l’épave, tu piques 2 cartes sans te faire démasquer.')+BT('expose()','🚨 On m’a démasqué (+1 carte requise)');
 case 'Survivaliste':{const left=(SV[Math.min(13,Math.max(3,S.p.length))]||0)-(f.forced||0);return BT('force()',`🗳️ Forcer le vote d’élimination en fin de tour (reste ${left})`,left<1||S.force)+(S.force?ps('Vote forcé : il aura lieu à la fin du tour.'):'')}
 case 'Sourcier':{const l=2-(f.dbl||0);return c.b=='eau'&&l>0?BT('dbl()',c.dbl?'✖️2 Eau doublée (annuler)':`✖️2 Doubler l’eau (reste ${l} tour${l>1?'s':''})`,0,c.dbl?'on':''):ps(`Doublage d’eau : ${l} tour${l>1?'s':''} restant${l>1?'s':''}${c.b=='eau'?'':' · choisis « Collecter de l’eau » pour l’utiliser'}.`)}
@@ -258,13 +273,17 @@ default:return ''}}
 function setPz(ch){const p=me();p.poison=ch;p.pn=ch;if(ch){p.ep=true;S.pz=true}ui()}
 function prez(){const v=$('pz').value;if(v==='')return;me().prez=S.p[+v].n;ui()}
 function view(){const p=me();if(lk()||p.u.view)return;const t=S.p[+$('vw').value];if(!t)return;p.u.view=1;S.msg=`👁️ Inventaire de <b>${t.n}</b> : 🔩 ${t.inv.tole} tôle(s) · 🔫 ${t.inv.fusil} fusil(s) · 🎯 ${t.inv.balle} balle(s)${t.inv.fish||t.inv.eau?` · 🐟 ${t.inv.fish} · 💧 ${t.inv.eau}`:''}`;sfx('reveal');ui()}
-function trade(){const p=me();if(lk()||p.u.com)return;const t=S.p[+$('tg').value],g=$('gv')&&$('gv').value;if(!t||!g||p.inv[g]<1)return;const pool=['tole','fusil','balle'].flatMap(k=>Array(t.inv[k]).fill(k));if(!pool.length){S.msg=`🤝 ${t.n} n’a aucun objet à échanger.`;return ui()}const k=pool[Math.random()*pool.length|0];p.inv[g]--;t.inv[g]++;t.inv[k]--;p.inv[k]++;p.u.com=1;S.msg=`🤝 Échange avec ${t.n} : tu donnes ${NM[g]} et tu reçois <b>${NM[k]}</b>.`;sfx('reveal');ui()}
+function trade(){const p=me();if(lk()||p.u.com2)return;const t=S.p[+$('tg').value];if(!t)return;const pool=INVK.flatMap(k=>Array(t.inv[k]).fill(k));if(!pool.length){S.msg=`🕵️ ${t.n} n’a aucun objet à voler.`;return ui()}const k=pool[Math.random()*pool.length|0];t.inv[k]--;p.inv[k]++;p.u.com2=1;p.u.com=1;S.msg=`🕵️ Tu voles à ${t.n} : <b>${NM[k]}</b>.`;sfx('reveal');ui()}
+function xchH(p,c,oth){const st='style="font-size:.9rem;opacity:.85"',mine=INVK.filter(k=>p.inv[k]>0);if(c.xch)return `<p ${st}>Échange déjà effectué ce tour.</p>`;if(!oth.length||!mine.length)return `<p ${st}>Il te faut au moins un objet et un autre joueur en vie pour échanger.</p>`;
+const o=oth.map(([q,i])=>`<option value=${i}>${q.n}</option>`).join(''),it=a=>a.map(k=>`<option value=${k}>${NM[k]}</option>`).join('');
+return `<select id=xt style="width:100%">${o}</select><div class="row h" style="margin-top:6px"><select id=xg style="flex:1">${it(mine)}</select><span>⇄</span><select id=xr style="flex:1">${it(INVK)}</select></div><p ${st}>À gauche : ce que tu donnes · à droite : ce que tu reçois (le joueur doit être d’accord et avoir l’objet). 1 échange par tour.</p><button class=alt onclick="xch()">🔁 Échanger</button>`}
+function xch(){const p=me(),c=S.cur;if(lk()||c.xch)return;const t=S.p[+$('xt').value],g=$('xg').value,r=$('xr').value;if(!t||!g||!r)return;if(p.inv[g]<1){S.msg='🔁 Tu n’as pas '+NM[g]+' à donner.';return ui()}if(t.inv[r]<1){S.msg=`🔁 ${t.n} n’a pas ${NM[r]}.`;return ui()}p.inv[g]--;t.inv[g]++;t.inv[r]--;p.inv[r]++;c.xch=1;if(rn(p)=='Commercial')p.u.com=1;S.msg=`🔁 Échange avec ${t.n} : tu donnes ${NM[g]} et tu reçois ${NM[r]}.`;sfx('reveal');ui()}
 function guess(){const p=me();if(lk())return;const t=S.p[+$('gt').value],g=+$('gr').value;if(!t||(p.f.tries||0)>=3)return;p.f.tries=(p.f.tries||0)+1;if(t.r==g){t.a=false;t.dt=S.tour;p.f.found=(p.f.found||0)+1;S.inh=+$('gt').value;S.an.push(`🎯 ${t.n} a été démasqué : c’était ${R[g].n}. Il meurt.`);S.msg=`🎯 Bien vu ! ${t.n} était bien ${R[g].n} et meurt.`;sfx('kill')}else{S.msg=`❌ Raté : ${t.n} n’est pas ${R[g].n}. Essais restants : ${3-p.f.tries}`;sfx('reveal')}ui()}
 function dbl(){if(lk()||!S.cur.b||S.cur.b=='epa')return;S.cur.dbl=!S.cur.dbl;ui()}
 function resurrect(){const p=me(),t=S.p[+$('rz').value];if(lk()||p.u.res||!t||t.a)return;t.a=true;t.poison=false;t.pn=false;p.u.res=1;S.an.push(`✨ ${t.n} a été ressuscité !`);S.msg=`✨ ${t.n} revient à la vie.`;sfx('reveal');ui()}
 function sumo(){const p=me(),t=S.p[+$('su').value];if(lk()||p.u.sum||!t)return;p.u.sum=1;S.an.push(`🥋 ${t.n} est évincé du radeau !`);S.msg=`🥋 Tu prends la place de ${t.n}.`;ui()}
 function eatx(){const p=me(),c=S.cur;if(lk()||c.eatx||S.fish<1||S.eau<1)return;S.fish--;S.eau--;c.eatx=1;p.f.extra=(p.f.extra||0)+1;S.msg='🍖 Tu manges une ration en plus.';sfx('fish');ui()}
-function hypno(){const p=me(),a=S.p[+$('hx1').value],b=S.p[+$('hx2').value];if(lk()||p.u.hyp)return;if(!a||!b||a===b){S.msg='🌀 Choisis deux joueurs différents.';return ui()}[a.r,b.r]=[b.r,a.r];[a,b].forEach(q=>{q.f={};q.u={};q.hand=0;q.need=7});p.u.hyp=1;S.an.push('🌀 Deux joueurs de l’île ont été échangés !');S.msg='🌀 Échange effectué en secret.';ui()}
+function hypno(){const p=me(),a=S.p[+$('hx1').value],b=S.p[+$('hx2').value];if(lk()||p.u.hyp)return;if(!a||!b||a===b){S.msg='🌀 Choisis deux joueurs différents.';return ui()}if(a===p||b===p){S.msg='🌀 Tu ne peux pas t’échanger toi-même : choisis deux autres joueurs.';return ui()}[a.r,b.r]=[b.r,a.r];[a.f,b.f]=[b.f,a.f];[a.u,b.u]=[b.u,a.u];[a.prez,b.prez]=[b.prez,a.prez];[a,b].forEach(q=>{q.hand=0;q.need=7});p.u.hyp=1;S.an.push('🌀 Deux joueurs de l’île ont été échangés !');S.msg='🌀 Échange effectué en secret.';ui()}
 function expose(){const p=me();if(lk())return;p.need++;S.msg=`🚨 Démasqué ! Tu dois maintenant avoir ${p.need} cartes en main.`;ui()}
 function force(){const p=me(),l=(SV[Math.min(13,Math.max(3,S.p.length))]||0)-(p.f.forced||0);if(lk()||l<1||S.force)return;S.force=true;p.f.forced=(p.f.forced||0)+1;S.msg='🗳️ Un vote d’élimination aura lieu à la fin du tour.';ui()}
 function turn(){S.kmsg='';S.lastMsg='';S.shot=null;S.cur={b:null,q:1,cap:false,ex:false};S.mode=null;S.msg='';ui();anim()}
@@ -285,8 +304,9 @@ ${c.b=='epa'?`<p>🃏 +${n=='Voyageur temporel'?'2 cartes (discrètes)':'1 carte
 <h3>3. 🎒 Inventaire</h3><div class=inv>${rows.map(([k,e,l])=>`<div class=iv><span>${e} ${l}</span><span><button onclick="inv('${k}',-1)">−</button> <b>${p.inv[k]}</b> <button onclick="inv('${k}',1)">+</button></span></div>`).join('')}</div>
 <label><input type=checkbox style="width:auto;min-height:0" ${p.poison?'checked':''} onchange="setPz(this.checked)"> ☠️ Empoisonné</label>${p.poison?`<button class=alt onclick="antidote()">💉 Antidote</button>`:''}
 <h3>4. Capacité</h3>${capH(p,c,oth)}
+<h3>5. 🔁 Échanger</h3>${xchH(p,c,oth)}
 ${kh}`;
-if(lock)A.innerHTML=`<div class=lk>${H}<div class=cv><div class=cvi><div class="big-e ${p.a?'sn':'sk'}">${p.a?'🐍':'💀'}</div><h2>${p.a?'Tu es empoisonné':'Tu es mort'}</h2><p>${p.a?'Le poison te paralyse : tu ne peux rien faire ce tour, sauf utiliser l’antidote.':'Tu ne peux plus rien faire.'}</p></div></div></div>${p.a?`<button class=big onclick="antidote()">💉 Antidote</button>`:''}<button class=big onclick="endTurn()">➡️ Passer au joueur suivant</button>`;
+if(lock)A.innerHTML=`<div class=lk>${H}<div class=cv><div class=cvi><div class="big-e ${p.a?'sn':'sk'}">${p.a?'🐍':'💀'}</div><h2>${p.a?'Tu es empoisonné':'Tu es mort'}</h2><p>${p.a?'Le poison te paralyse pendant ce seul tour : tu ne peux rien faire, sauf utiliser l’antidote. Il se dissipe à la fin du tour.':'Tu ne peux plus rien faire.'}</p></div></div></div>${p.a?`<button class=big onclick="antidote()">💉 Antidote</button>`:''}<button class=big onclick="endTurn()">➡️ Passer au joueur suivant</button>`;
 else A.innerHTML=H+`<button class=big ${busy?'disabled':''} onclick="endTurn()">✅ Fin du tour</button>`;
 if(S.msg&&S.msg!==S.lastMsg){S.lastMsg=S.msg;const mm=A.querySelector('.msg');mm&&mm.scrollIntoView({block:'center'})}
 if(fr!=null)requestAnimationFrame(()=>requestAnimationFrame(()=>{const f=$('f'+fr);f&&f.classList.add('gone')}))}
@@ -303,14 +323,14 @@ if(k=='vil')p.hand=Math.max(0,p.hand-1);
 if(k=='ser'){p.poison=true;p.pn=true;p.ep=true;S.pz=true}
 if(n=='Capitaine'){if(Math.random()<1/8){p.key=true;x2+='<br>🎡 Roue : <b>🔑 Clé de communication obtenue !</b>'}else x2+='<br>🎡 Roue : 🍂 feuilles inutiles'}
 if(n=='Pêcheur au gros'&&shore(i)){S.fish++;S.st.fish++;p.st.fish++;x2+='<br>🎣 Case au bord de l’eau : <b>+1 poisson</b>'}
-S.seen[i]=true;S.fresh=i;p.st.expl++;c.ex=true;S.mode=null;S.msg=`${T[k][0]} <b>${m}${ex}</b>${x2}<br><small>Seul toi le vois : ça disparaît à la fin de ton tour.</small>`;sfx('reveal');ui()}}
+if(k=='com')x2+='<br>📡 L’antenne du centre de communication reste visible de tous sur la carte.';S.seen[i]=true;S.fresh=i;p.st.expl++;c.ex=true;S.mode=null;S.msg=`${T[k][0]} <b>${m}${ex}</b>${x2}<br><small>${k=='com'?'Ce message disparaît à la fin de ton tour, mais l’antenne reste sur la carte.':'Seul toi le vois : ça disparaît à la fin de ton tour.'}</small>`;sfx('reveal');ui()}}
 function kill(){if(lk())return;const p=me(),v=S.p[+$('k').value];if(!v)return;if(p.inv.fusil<1||p.inv.balle<1){S.kmsg='🔫 Impossible de tirer : il te manque '+(p.inv.fusil<1?'un fusil':'')+(p.inv.fusil<1&&p.inv.balle<1?' et ':'')+(p.inv.balle<1?'une balle':'')+' dans ton inventaire.';return ui()}S.kmsg='';p.inv.balle--;v.sh=true;S.shot=+$('k').value;sfx('shot');ui()}
 function defend(){const v=S.p[S.shot],d=S.p[+$('df').value];if(!d||d.inv.tole<1)return;d.inv.tole--;S.shot=null;S.msg=`🛡️ ${d.n} défend ${v.n} et perd 1 tôle : <b>${v.n} survit !</b>`;sfx('shield');ui()}
 function noDef(){const v=S.p[S.shot],p=me();S.inh=S.shot;S.shot=null;v.a=false;v.dt=S.tour;S.st.kills++;p.st.kills++;S.msg=`💀 ${v.n} est mort.`;sfx('kill');ui()}
 function takeM(y){const v=S.p[S.inh],p=me();S.inh=null;if(y&&rn(p)!='Survivaliste'){p.ex.push({n:v.n,rn:rn(v)});S.msg=`💀 ${v.n} est mort. Tu récupères sa mission (${rn(v)}).`}else S.msg=`💀 ${v.n} est mort. Tu gardes uniquement ta mission.`;ui()}
 function endTurn(){if(S.shot!=null||S.inh!=null)return;const c=S.cur,p=S.p[S.i];
 if(!locked(p)){if(c.b&&c.b!='epa'){const q=eq(c);S.st[c.b]+=q;p.st[c.b]+=q;if(c.b=='fish')S.fish+=q;if(c.b=='eau')S.eau+=q;if(c.dbl){if(rn(p)=='Psychorigide')p.u.psy=1;if(rn(p)=='Sourcier')p.f.dbl=(p.f.dbl||0)+1}}if(c.b=='epa'){p.st.epa++;p.hand+=rn(p)=='Voyageur temporel'?2:1}}
-p.st.turns++;p.pn=false;S.msg='';let w=0;
+p.st.turns++;if(p.poison&&!p.pn)p.poison=false;p.pn=false;S.msg='';let w=0;
 do{S.i++;if(S.i>=S.p.length){S.i=0;w=1}}while(!S.p[S.i].a);
 if(w){if(S.storm)return fin();return roundEnd()}trans()}
 function eat(){const n=S.p.filter(q=>q.a).length,mf=Math.max(0,n-S.fish),me2=Math.max(0,n-S.eau);S.fish=Math.max(0,S.fish-n);S.eau=Math.max(0,S.eau-n);
